@@ -2,686 +2,592 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Календарь</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;700&family=Golos+Text:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;700;900&family=Golos+Text:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0f0f13;
-    --surface: #1a1a24;
-    --surface2: #22222f;
-    --accent: #7c6af7;
-    --accent2: #f76a8a;
-    --text: #f0eeff;
-    --muted: #6b6880;
-    --today-bg: linear-gradient(135deg, #7c6af7, #f76a8a);
-    --event-dot: #f76a8a;
-  }
+:root {
+  --bg:#0c0c10;--s1:#141418;--s2:#1c1c22;--s3:#242430;
+  --a1:#c8ff00;--a2:#ff6b6b;--a3:#6baaff;--a4:#ffd166;
+  --text:#f4f4f0;--muted:#5a5a6a;--border:rgba(255,255,255,0.06);--r:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font-family:'Golos Text',sans-serif;height:100%;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100vh;max-width:430px;margin:0 auto}
+.nav{display:flex;background:var(--s1);border-top:1px solid var(--border);padding:8px 16px 20px;gap:4px;order:2;flex-shrink:0}
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 6px;border-radius:14px;border:none;background:none;color:var(--muted);cursor:pointer;transition:all 0.2s;font-family:'Golos Text',sans-serif}
+.nav-tab .icon{font-size:20px;line-height:1}
+.nav-tab .label{font-size:10px;font-family:'Unbounded',sans-serif;font-weight:400;letter-spacing:0.3px}
+.nav-tab.active{color:var(--bg);background:var(--a1)}
+.nav-tab:active{transform:scale(0.93)}
+.pages{flex:1;overflow:hidden;order:1;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;padding:16px 16px 12px;opacity:0;pointer-events:none;transform:translateY(12px);transition:opacity 0.25s,transform 0.25s}
+.page.active{opacity:1;pointer-events:all;transform:translateY(0)}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.page-title{font-family:'Unbounded',sans-serif;font-size:20px;font-weight:700;letter-spacing:-0.5px}
+.page-title span{color:var(--a1)}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* CALENDAR */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;background:var(--s1);border-radius:var(--r);padding:12px 16px;margin-bottom:12px}
+.cal-nav-btn{width:32px;height:32px;background:var(--s2);border:none;border-radius:10px;color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s,transform 0.1s}
+.cal-nav-btn:active{transform:scale(0.88)}
+.cal-month-title{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:600;text-align:center}
+.cal-year{font-size:11px;color:var(--muted);display:block;text-align:center;margin-top:1px}
+.cal-grid-wrap{background:var(--s1);border-radius:var(--r);padding:12px;margin-bottom:16px}
+.weekdays{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px}
+.wd{text-align:center;font-size:10px;font-family:'Unbounded',sans-serif;color:var(--muted);padding:4px 0}
+.wd.we{color:var(--a2);opacity:0.7}
+.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dc{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;cursor:pointer;transition:background 0.15s,transform 0.1s;gap:2px}
+.dc:active{transform:scale(0.85)}
+.dc.empty{cursor:default;pointer-events:none}
+.dc.other .dn{color:var(--muted);opacity:0.3}
+.dc.we .dn{color:var(--a2)}
+.dn{font-size:13px;font-weight:500;line-height:1}
+.dc.today{background:var(--a1)}
+.dc.today .dn{color:var(--bg);font-weight:700}
+.dc.sel:not(.today){background:var(--s3);outline:1.5px solid var(--a1)}
+.dc:not(.empty):not(.today):hover{background:var(--s2)}
+.edots{display:flex;gap:2px}
+.edot{width:3px;height:3px;border-radius:50%;background:var(--a2)}
+.dc.today .edot{background:var(--bg)}
+.sel-date-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sel-date-label{font-family:'Unbounded',sans-serif;font-size:13px}
+.add-btn{background:var(--a1);color:var(--bg);border:none;border-radius:20px;padding:8px 16px;font-family:'Unbounded',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:opacity 0.2s,transform 0.1s}
+.add-btn:active{opacity:0.8;transform:scale(0.95)}
+.event-card{background:var(--s1);border-radius:var(--r);padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;animation:fadeUp 0.2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.ev-stripe{width:3px;height:44px;border-radius:3px;flex-shrink:0}
+.ev-stripe.pink{background:linear-gradient(180deg,#c8ff00,#6bff8a)}
+.ev-stripe.red{background:linear-gradient(180deg,#ff6b6b,#ff9f6b)}
+.ev-stripe.blue{background:linear-gradient(180deg,#6baaff,#b06bff)}
+.ev-stripe.gold{background:linear-gradient(180deg,#ffd166,#ff9f6b)}
+.ev-body{flex:1}
+.ev-title{font-size:14px;font-weight:600;margin-bottom:3px}
+.ev-meta{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.ev-notify{font-size:10px;background:var(--s3);padding:2px 8px;border-radius:10px;color:var(--a1)}
+.ev-del{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px;border-radius:8px;line-height:1;transition:color 0.2s}
+.ev-del:hover{color:var(--a2)}
+.empty-state{text-align:center;color:var(--muted);font-size:13px;padding:28px 16px;line-height:1.7}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Golos Text', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+/* TASKS */
+.progress-bar-wrap{display:flex;align-items:center;gap:14px;background:var(--s1);border-radius:var(--r);padding:14px 16px;margin-bottom:16px}
+.progress-info{flex:1}
+.progress-label{font-size:10px;font-family:'Unbounded',sans-serif;font-weight:300;color:var(--muted);letter-spacing:0.5px;margin-bottom:8px}
+.progress-track{height:4px;background:var(--s3);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:var(--a1);border-radius:4px;transition:width 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+.progress-pct{font-family:'Unbounded',sans-serif;font-size:20px;font-weight:700;color:var(--a1)}
+.task-input-row{display:flex;gap:8px;margin-bottom:16px}
+.task-input{flex:1;background:var(--s1);border:1.5px solid transparent;border-radius:14px;padding:12px 14px;color:var(--text);font-family:'Golos Text',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s}
+.task-input:focus{border-color:var(--a1)}
+.task-input::placeholder{color:var(--muted)}
+.task-add-btn{width:46px;height:46px;background:var(--a1);border:none;border-radius:14px;color:var(--bg);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity 0.2s,transform 0.1s;flex-shrink:0}
+.task-add-btn:active{opacity:0.8;transform:scale(0.92)}
+.filter-row{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-chip{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--muted);font-family:'Unbounded',sans-serif;font-size:10px;cursor:pointer;white-space:nowrap;transition:all 0.2s}
+.filter-chip.active{background:var(--a1);border-color:var(--a1);color:var(--bg)}
+.task-item{background:var(--s1);border-radius:var(--r);padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;animation:fadeUp 0.2s ease;transition:opacity 0.3s}
+.task-item.done{opacity:0.45}
+.task-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--muted);background:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-size:12px;color:transparent}
+.task-item.done .task-check{background:var(--a1);border-color:var(--a1);color:var(--bg)}
+.task-text{flex:1;font-size:14px;line-height:1.4}
+.task-item.done .task-text{text-decoration:line-through}
+.task-cat{font-size:10px;padding:2px 8px;border-radius:10px;font-family:'Unbounded',sans-serif;font-weight:400}
+.cat-work{background:rgba(107,170,255,0.15);color:var(--a3)}
+.cat-personal{background:rgba(200,255,0,0.15);color:var(--a1)}
+.cat-health{background:rgba(255,107,107,0.15);color:var(--a2)}
+.task-del{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px;transition:color 0.2s}
+.task-del:hover{color:var(--a2)}
 
-  .app {
-    max-width: 420px;
-    margin: 0 auto;
-    padding: 16px;
-    padding-bottom: 32px;
-  }
+/* NOTES LIST */
+.notes-topbar{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.notes-topbar::-webkit-scrollbar{display:none}
+.ntag-filter{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--muted);font-family:'Unbounded',sans-serif;font-size:10px;cursor:pointer;white-space:nowrap;transition:all 0.2s}
+.ntag-filter.active{background:var(--a1);border-color:var(--a1);color:var(--bg)}
+.notes-list{display:flex;flex-direction:column;gap:10px;padding-bottom:80px}
+.note-row{background:var(--s1);border-radius:var(--r);padding:16px;cursor:pointer;transition:transform 0.15s;border-left:3px solid transparent;animation:fadeUp 0.2s ease}
+.note-row:active{transform:scale(0.98)}
+.note-row.col-yellow{border-left-color:var(--a4)}
+.note-row.col-green{border-left-color:var(--a1)}
+.note-row.col-blue{border-left-color:var(--a3)}
+.note-row.col-pink{border-left-color:var(--a2)}
+.note-row-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.note-row-title{font-size:15px;font-weight:600;line-height:1.3;flex:1}
+.note-row-del{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0 0 0 8px;line-height:1;transition:color 0.2s}
+.note-row-del:hover{color:var(--a2)}
+.note-row-preview{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:10px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.note-row-footer{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.note-tag{font-size:10px;padding:2px 10px;border-radius:20px;background:var(--s3);color:var(--muted);font-family:'Unbounded',sans-serif}
+.note-row.col-yellow .note-tag{background:rgba(255,209,102,0.1);color:var(--a4)}
+.note-row.col-green .note-tag{background:rgba(200,255,0,0.1);color:var(--a1)}
+.note-row.col-blue .note-tag{background:rgba(107,170,255,0.1);color:var(--a3)}
+.note-row.col-pink .note-tag{background:rgba(255,107,107,0.1);color:var(--a2)}
+.note-date-label{font-size:10px;color:var(--muted);opacity:0.5;margin-left:auto;font-family:'Unbounded',sans-serif}
+.fab{position:fixed;bottom:92px;right:20px;width:54px;height:54px;background:var(--a1);border:none;border-radius:50%;color:var(--bg);font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(200,255,0,0.3);transition:transform 0.2s;z-index:10}
+.fab:active{transform:scale(0.9)}
 
-  /* Header */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-    padding-top: 8px;
-  }
+/* NOTE VIEWER */
+.note-viewer{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;flex-direction:column;transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.25,1,0.5,1)}
+.note-viewer.open{transform:translateX(0)}
+.nv-header{display:flex;align-items:center;gap:12px;padding:16px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.nv-back{width:36px;height:36px;background:var(--s1);border:none;border-radius:10px;color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.nv-title-input{flex:1;background:none;border:none;color:var(--text);font-family:'Unbounded',sans-serif;font-size:16px;font-weight:600;outline:none}
+.nv-title-input::placeholder{color:var(--muted)}
+.nv-save-btn{background:var(--a1);color:var(--bg);border:none;border-radius:10px;padding:8px 14px;font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:opacity 0.2s,transform 0.1s}
+.nv-save-btn:active{opacity:0.8;transform:scale(0.95)}
+.nv-body{flex:1;padding:16px;overflow:hidden;display:flex;flex-direction:column}
+.nv-textarea{flex:1;background:none;border:none;color:var(--text);font-family:'Golos Text',sans-serif;font-size:15px;line-height:1.8;outline:none;resize:none;width:100%}
+.nv-textarea::placeholder{color:var(--muted)}
+.nv-footer{padding:12px 16px 24px;border-top:1px solid var(--border);flex-shrink:0}
+.nv-tags-label{font-size:10px;font-family:'Unbounded',sans-serif;color:var(--muted);letter-spacing:1px;margin-bottom:8px}
+.nv-tags-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.nv-tag{display:flex;align-items:center;gap:4px;font-size:11px;padding:4px 10px;border-radius:20px;background:var(--s2);color:var(--muted);font-family:'Unbounded',sans-serif}
+.nv-tag-del{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:0;line-height:1}
+.nv-tag-input{background:var(--s1);border:1.5px solid var(--border);border-radius:20px;padding:4px 12px;color:var(--text);font-family:'Unbounded',sans-serif;font-size:11px;outline:none;width:90px;transition:border-color 0.2s}
+.nv-tag-input:focus{border-color:var(--a1)}
+.nv-tag-input::placeholder{color:var(--muted)}
+.nv-color-row{display:flex;gap:10px;align-items:center}
+.nv-col-label{font-size:10px;color:var(--muted);font-family:'Unbounded',sans-serif;letter-spacing:1px}
+.nc-dot{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform 0.15s,border-color 0.15s}
+.nc-dot.selected{border-color:#fff;transform:scale(1.2)}
+.nc-dot.nc-yellow{background:var(--a4)}
+.nc-dot.nc-green{background:var(--a1)}
+.nc-dot.nc-blue{background:var(--a3)}
+.nc-dot.nc-pink{background:var(--a2)}
 
-  .month-nav {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .nav-btn {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    background: var(--surface);
-    border: none;
-    color: var(--text);
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-    transition: background 0.2s, transform 0.1s;
-  }
-  .nav-btn:active { transform: scale(0.9); background: var(--surface2); }
-
-  .month-title {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: -0.5px;
-    min-width: 160px;
-    text-align: center;
-  }
-
-  .year-badge {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 11px;
-    font-weight: 300;
-    color: var(--muted);
-    background: var(--surface);
-    padding: 4px 10px;
-    border-radius: 20px;
-  }
-
-  /* Calendar grid */
-  .calendar {
-    background: var(--surface);
-    border-radius: 20px;
-    padding: 16px;
-    margin-bottom: 20px;
-  }
-
-  .weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    margin-bottom: 8px;
-  }
-
-  .weekday {
-    text-align: center;
-    font-size: 11px;
-    font-family: 'Unbounded', sans-serif;
-    font-weight: 400;
-    color: var(--muted);
-    padding: 4px 0;
-    letter-spacing: 0.5px;
-  }
-  .weekday.weekend { color: var(--accent2); opacity: 0.7; }
-
-  .days-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 2px;
-  }
-
-  .day-cell {
-    aspect-ratio: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    cursor: pointer;
-    position: relative;
-    transition: background 0.15s, transform 0.1s;
-    gap: 2px;
-  }
-
-  .day-cell:active { transform: scale(0.88); }
-
-  .day-num {
-    font-size: 14px;
-    font-family: 'Golos Text', sans-serif;
-    font-weight: 500;
-    line-height: 1;
-  }
-
-  .day-cell.empty { cursor: default; }
-  .day-cell.empty:active { transform: none; }
-
-  .day-cell.other-month .day-num { color: var(--muted); opacity: 0.4; }
-
-  .day-cell.weekend .day-num { color: var(--accent2); }
-
-  .day-cell.today {
-    background: var(--today-bg);
-  }
-  .day-cell.today .day-num { color: #fff; font-weight: 700; }
-
-  .day-cell.selected:not(.today) {
-    background: var(--surface2);
-    outline: 2px solid var(--accent);
-  }
-
-  .day-cell:not(.empty):not(.today):hover {
-    background: var(--surface2);
-  }
-
-  .events-dots {
-    display: flex;
-    gap: 2px;
-    justify-content: center;
-  }
-  .dot {
-    width: 4px; height: 4px;
-    border-radius: 50%;
-    background: var(--event-dot);
-  }
-  .day-cell.today .dot { background: rgba(255,255,255,0.8); }
-
-  /* Selected date info */
-  .selected-info {
-    background: var(--surface);
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    animation: slideUp 0.2s ease;
-  }
-
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .selected-date-text {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 14px;
-    font-weight: 400;
-  }
-
-  .add-event-btn {
-    background: var(--today-bg);
-    border: none;
-    color: #fff;
-    font-family: 'Golos Text', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    padding: 8px 16px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
-  }
-  .add-event-btn:active { opacity: 0.8; transform: scale(0.96); }
-
-  /* Events list */
-  .events-section {
-    margin-bottom: 20px;
-  }
-
-  .section-title {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 12px;
-    font-weight: 400;
-    color: var(--muted);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  .event-item {
-    background: var(--surface);
-    border-radius: 14px;
-    padding: 14px 16px;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    animation: slideUp 0.2s ease;
-  }
-
-  .event-color {
-    width: 4px;
-    height: 40px;
-    border-radius: 4px;
-    background: var(--today-bg);
-    flex-shrink: 0;
-  }
-
-  .event-color.blue { background: linear-gradient(135deg, #6af7d4, #6ab5f7); }
-  .event-color.orange { background: linear-gradient(135deg, #f7a96a, #f7d46a); }
-
-  .event-content { flex: 1; }
-
-  .event-title {
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 2px;
-  }
-
-  .event-time {
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  .event-delete {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 18px;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 6px;
-    transition: color 0.2s;
-  }
-  .event-delete:hover { color: var(--accent2); }
-
-  .no-events {
-    text-align: center;
-    color: var(--muted);
-    font-size: 13px;
-    padding: 24px;
-  }
-
-  /* Modal */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(6px);
-    z-index: 100;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s;
-  }
-  .modal-overlay.open {
-    opacity: 1;
-    pointer-events: all;
-  }
-
-  .modal {
-    background: var(--surface);
-    border-radius: 24px 24px 0 0;
-    padding: 24px 20px 40px;
-    width: 100%;
-    max-width: 420px;
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .modal-overlay.open .modal {
-    transform: translateY(0);
-  }
-
-  .modal-handle {
-    width: 40px; height: 4px;
-    background: var(--muted);
-    border-radius: 2px;
-    margin: 0 auto 20px;
-    opacity: 0.4;
-  }
-
-  .modal-title {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 20px;
-  }
-
-  .input-group {
-    margin-bottom: 16px;
-  }
-
-  .input-label {
-    font-size: 12px;
-    color: var(--muted);
-    margin-bottom: 6px;
-    font-family: 'Unbounded', sans-serif;
-    font-weight: 300;
-    letter-spacing: 0.5px;
-  }
-
-  .input-field {
-    width: 100%;
-    background: var(--surface2);
-    border: 1.5px solid transparent;
-    border-radius: 12px;
-    padding: 12px 14px;
-    color: var(--text);
-    font-family: 'Golos Text', sans-serif;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .input-field:focus { border-color: var(--accent); }
-  .input-field::placeholder { color: var(--muted); }
-
-  .color-picker {
-    display: flex;
-    gap: 10px;
-  }
-
-  .color-opt {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: transform 0.15s, border-color 0.15s;
-  }
-  .color-opt:active { transform: scale(0.9); }
-  .color-opt.selected { border-color: white; transform: scale(1.15); }
-  .color-opt.pink { background: linear-gradient(135deg, #7c6af7, #f76a8a); }
-  .color-opt.teal { background: linear-gradient(135deg, #6af7d4, #6ab5f7); }
-  .color-opt.orange { background: linear-gradient(135deg, #f7a96a, #f7d46a); }
-
-  .modal-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-  }
-
-  .btn-cancel {
-    flex: 1;
-    padding: 14px;
-    border-radius: 14px;
-    background: var(--surface2);
-    border: none;
-    color: var(--muted);
-    font-family: 'Golos Text', sans-serif;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .btn-cancel:active { background: var(--bg); }
-
-  .btn-save {
-    flex: 2;
-    padding: 14px;
-    border-radius: 14px;
-    background: var(--today-bg);
-    border: none;
-    color: white;
-    font-family: 'Unbounded', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
-  }
-  .btn-save:active { opacity: 0.85; transform: scale(0.97); }
+/* SHEETS */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s}
+.overlay.open{opacity:1;pointer-events:all}
+.sheet{background:var(--s1);border-radius:24px 24px 0 0;padding:20px 20px 40px;width:100%;max-width:430px;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1)}
+.overlay.open .sheet{transform:translateY(0)}
+.sheet-handle{width:36px;height:4px;background:var(--s3);border-radius:2px;margin:0 auto 18px}
+.sheet-title{font-family:'Unbounded',sans-serif;font-size:16px;font-weight:700;margin-bottom:18px}
+.field-group{margin-bottom:14px}
+.field-label{font-size:10px;font-family:'Unbounded',sans-serif;font-weight:300;color:var(--muted);letter-spacing:1px;margin-bottom:6px}
+.field-input{width:100%;background:var(--s2);border:1.5px solid transparent;border-radius:12px;padding:12px 14px;color:var(--text);font-family:'Golos Text',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s}
+.field-input:focus{border-color:var(--a1)}
+.field-input::placeholder{color:var(--muted)}
+.color-row{display:flex;gap:8px}
+.col-opt{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform 0.15s,border-color 0.15s}
+.col-opt.selected{border-color:#fff;transform:scale(1.15)}
+.col-opt.c-pink{background:linear-gradient(135deg,#c8ff00,#6bff8a)}
+.col-opt.c-red{background:linear-gradient(135deg,#ff6b6b,#ff9f6b)}
+.col-opt.c-blue{background:linear-gradient(135deg,#6baaff,#b06bff)}
+.col-opt.c-gold{background:linear-gradient(135deg,#ffd166,#ff9f6b)}
+.notify-toggle{display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:12px;padding:12px 14px}
+.notify-label{font-size:14px}
+.notify-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.toggle{width:44px;height:24px;background:var(--s3);border-radius:12px;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0}
+.toggle.on{background:var(--a1)}
+.toggle-knob{position:absolute;top:3px;left:3px;width:18px;height:18px;background:white;border-radius:50%;transition:transform 0.2s}
+.toggle.on .toggle-knob{transform:translateX(20px)}
+.btn-row{display:flex;gap:10px;margin-top:18px}
+.btn-cancel{flex:1;padding:14px;border-radius:14px;background:var(--s2);border:none;color:var(--muted);font-family:'Golos Text',sans-serif;font-size:14px;cursor:pointer}
+.btn-save{flex:2;padding:14px;border-radius:14px;background:var(--a1);border:none;color:var(--bg);font-family:'Unbounded',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:opacity 0.2s,transform 0.1s}
+.btn-save:active{opacity:0.85;transform:scale(0.97)}
+.cat-row{display:flex;gap:6px}
+.cat-btn{padding:6px 12px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--muted);font-family:'Unbounded',sans-serif;font-size:10px;cursor:pointer;transition:all 0.2s}
+.cat-btn.active-work{background:rgba(107,170,255,0.2);border-color:var(--a3);color:var(--a3)}
+.cat-btn.active-personal{background:rgba(200,255,0,0.15);border-color:var(--a1);color:var(--a1)}
+.cat-btn.active-health{background:rgba(255,107,107,0.15);border-color:var(--a2);color:var(--a2)}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:4px}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="header">
-    <div class="month-nav">
-      <button class="nav-btn" id="prevBtn">‹</button>
-      <div class="month-title" id="monthTitle"></div>
-      <button class="nav-btn" id="nextBtn">›</button>
+  <div class="pages">
+    <!-- CALENDAR -->
+    <div class="page active" id="page-cal">
+      <div class="page-header"><div class="page-title">Кален<span>дарь</span></div></div>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="prevM">‹</button>
+        <div><div class="cal-month-title" id="calMonth"></div><span class="cal-year" id="calYear"></span></div>
+        <button class="cal-nav-btn" id="nextM">›</button>
+      </div>
+      <div class="cal-grid-wrap">
+        <div class="weekdays">
+          <div class="wd">ПН</div><div class="wd">ВТ</div><div class="wd">СР</div>
+          <div class="wd">ЧТ</div><div class="wd">ПТ</div><div class="wd we">СБ</div><div class="wd we">ВС</div>
+        </div>
+        <div class="days-grid" id="daysGrid"></div>
+      </div>
+      <div class="sel-date-row">
+        <div class="sel-date-label" id="selDateLabel"></div>
+        <button class="add-btn" id="openAddEvent">+ Событие</button>
+      </div>
+      <div id="eventsList"></div>
     </div>
-    <div class="year-badge" id="yearBadge"></div>
-  </div>
 
-  <div class="calendar">
-    <div class="weekdays">
-      <div class="weekday">ПН</div>
-      <div class="weekday">ВТ</div>
-      <div class="weekday">СР</div>
-      <div class="weekday">ЧТ</div>
-      <div class="weekday">ПТ</div>
-      <div class="weekday weekend">СБ</div>
-      <div class="weekday weekend">ВС</div>
+    <!-- TASKS -->
+    <div class="page" id="page-tasks">
+      <div class="page-header"><div class="page-title">За<span>дачи</span></div></div>
+      <div class="progress-bar-wrap">
+        <div class="progress-info">
+          <div class="progress-label">ВЫПОЛНЕНО</div>
+          <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        </div>
+        <div class="progress-pct" id="progressPct">0%</div>
+      </div>
+      <div class="task-input-row">
+        <input class="task-input" id="taskInput" placeholder="Новая задача...">
+        <button class="task-add-btn" id="addTaskBtn">+</button>
+      </div>
+      <div class="filter-row">
+        <button class="filter-chip active" data-f="all">Все</button>
+        <button class="filter-chip" data-f="active">Активные</button>
+        <button class="filter-chip" data-f="done">Готово</button>
+        <button class="filter-chip" data-f="work">Работа</button>
+        <button class="filter-chip" data-f="personal">Личное</button>
+        <button class="filter-chip" data-f="health">Здоровье</button>
+      </div>
+      <div id="tasksList"></div>
     </div>
-    <div class="days-grid" id="daysGrid"></div>
+
+    <!-- NOTES -->
+    <div class="page" id="page-notes">
+      <div class="page-header"><div class="page-title">Блок<span>нот</span></div></div>
+      <div class="notes-topbar" id="notesTagBar"></div>
+      <div class="notes-list" id="notesList"></div>
+      <button class="fab" id="openAddNote">+</button>
+    </div>
   </div>
 
-  <div class="selected-info" id="selectedInfo">
-    <div class="selected-date-text" id="selectedDateText"></div>
-    <button class="add-event-btn" id="addEventBtn">+ Добавить</button>
-  </div>
+  <nav class="nav">
+    <button class="nav-tab active" data-page="cal"><span class="icon">📅</span><span class="label">Календарь</span></button>
+    <button class="nav-tab" data-page="tasks"><span class="icon">✅</span><span class="label">Задачи</span></button>
+    <button class="nav-tab" data-page="notes"><span class="icon">📝</span><span class="label">Блокнот</span></button>
+  </nav>
+</div>
 
-  <div class="events-section">
-    <div class="section-title">События</div>
-    <div id="eventsList"></div>
+<!-- NOTE VIEWER -->
+<div class="note-viewer" id="noteViewer">
+  <div class="nv-header">
+    <button class="nv-back" id="nvBack">‹</button>
+    <input class="nv-title-input" id="nvTitle" placeholder="Заголовок...">
+    <button class="nv-save-btn" id="nvSave">Сохранить</button>
+  </div>
+  <div class="nv-body">
+    <textarea class="nv-textarea" id="nvBody" placeholder="Начни писать здесь...
+
+Поддерживаются большие тексты, идеи, планы — всё что угодно 📝"></textarea>
+  </div>
+  <div class="nv-footer">
+    <div class="nv-tags-label">ТЕГИ</div>
+    <div class="nv-tags-row" id="nvTagsRow">
+      <input class="nv-tag-input" id="nvTagInput" placeholder="+ тег">
+    </div>
+    <div class="nv-color-row">
+      <span class="nv-col-label">ЦВЕТ</span>
+      <div class="nc-dot nc-yellow selected" data-nc="yellow"></div>
+      <div class="nc-dot nc-green" data-nc="green"></div>
+      <div class="nc-dot nc-blue" data-nc="blue"></div>
+      <div class="nc-dot nc-pink" data-nc="pink"></div>
+    </div>
   </div>
 </div>
 
-<!-- Modal -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Новое событие</div>
-    <div class="input-group">
-      <div class="input-label">НАЗВАНИЕ</div>
-      <input class="input-field" id="eventTitle" placeholder="Встреча, день рождения...">
+<!-- EVENT MODAL -->
+<div class="overlay" id="eventModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Новое событие</div>
+    <div class="field-group">
+      <div class="field-label">НАЗВАНИЕ</div>
+      <input class="field-input" id="evTitle" placeholder="Встреча, день рождения...">
     </div>
-    <div class="input-group">
-      <div class="input-label">ВРЕМЯ</div>
-      <input class="input-field" id="eventTime" type="time">
+    <div class="field-group">
+      <div class="field-label">ВРЕМЯ</div>
+      <input class="field-input" id="evTime" type="time">
     </div>
-    <div class="input-group">
-      <div class="input-label">ЦВЕТ</div>
-      <div class="color-picker">
-        <div class="color-opt pink selected" data-color="pink"></div>
-        <div class="color-opt teal" data-color="teal"></div>
-        <div class="color-opt orange" data-color="orange"></div>
+    <div class="field-group">
+      <div class="field-label">ЦВЕТ</div>
+      <div class="color-row">
+        <div class="col-opt c-pink selected" data-c="pink"></div>
+        <div class="col-opt c-red" data-c="red"></div>
+        <div class="col-opt c-blue" data-c="blue"></div>
+        <div class="col-opt c-gold" data-c="gold"></div>
       </div>
     </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" id="cancelBtn">Отмена</button>
-      <button class="btn-save" id="saveBtn">СОХРАНИТЬ</button>
+    <div class="field-group">
+      <div class="notify-toggle">
+        <div><div class="notify-label">🔔 Уведомление в Telegram</div><div class="notify-sub">Бот напомнит за 30 минут</div></div>
+        <div class="toggle" id="notifyToggle"><div class="toggle-knob"></div></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-cancel" id="cancelEvent">Отмена</button>
+      <button class="btn-save" id="saveEvent">СОХРАНИТЬ</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div class="overlay" id="taskModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Добавить задачу</div>
+    <div class="field-group">
+      <div class="field-label">ЗАДАЧА</div>
+      <input class="field-input" id="taskModalInput" placeholder="Что нужно сделать?">
+    </div>
+    <div class="field-group">
+      <div class="field-label">КАТЕГОРИЯ</div>
+      <div class="cat-row">
+        <button class="cat-btn active-personal" data-cat="personal">Личное</button>
+        <button class="cat-btn" data-cat="work">Работа</button>
+        <button class="cat-btn" data-cat="health">Здоровье</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-cancel" id="cancelTask">Отмена</button>
+      <button class="btn-save" id="saveTask">ДОБАВИТЬ</button>
     </div>
   </div>
 </div>
 
 <script>
-// Telegram WebApp init
-const tg = window.Telegram?.WebApp;
-if (tg) {
-  tg.ready();
-  tg.expand();
-  tg.setHeaderColor('#0f0f13');
-  tg.setBackgroundColor('#0f0f13');
-}
+const tg=window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();tg.setHeaderColor('#0c0c10');tg.setBackgroundColor('#0c0c10');}
+const haptic=(t='light')=>tg?.HapticFeedback?.impactOccurred(t);
+const notifyH=(t='success')=>tg?.HapticFeedback?.notificationOccurred(t);
 
-const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const S={get:k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+let calEvents=S.get('ev3')||{};
+let tasks=S.get('tasks3')||[];
+let notes=S.get('notes3')||[];
+const save=()=>{S.set('ev3',calEvents);S.set('tasks3',tasks);S.set('notes3',notes);};
 
-let currentDate = new Date();
-let selectedDate = new Date();
-let selectedColor = 'pink';
+// NAV
+document.querySelectorAll('.nav-tab').forEach(tab=>tab.addEventListener('click',()=>{
+  const p=tab.dataset.page;
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById('page-'+p).classList.add('active');
+  haptic();
+  if(p==='tasks')renderTasks();
+  if(p==='notes')renderNotes();
+}));
 
-// Events storage
-let events = JSON.parse(localStorage.getItem('tg_calendar_events') || '{}');
+// ── CALENDAR ──
+const MONTHS=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+let calDate=new Date(),selDate=new Date();
+const dKey=d=>`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+const fmtSel=d=>{const dn=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];return `${dn[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()].toLowerCase()}`;};
 
-function saveEvents() {
-  localStorage.setItem('tg_calendar_events', JSON.stringify(events));
-}
-
-function getDateKey(d) {
-  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-}
-
-function formatSelectedDate(d) {
-  const days = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
-  return `${d.getDate()} ${MONTHS[d.getMonth()].toLowerCase()}, ${days[d.getDay()]}`;
-}
-
-function renderCalendar() {
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-
-  document.getElementById('monthTitle').textContent = MONTHS[month];
-  document.getElementById('yearBadge').textContent = year;
-
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-
-  // Monday-based offset
-  let startOffset = firstDay.getDay() - 1;
-  if (startOffset < 0) startOffset = 6;
-
-  const today = new Date();
-  const grid = document.getElementById('daysGrid');
-  grid.innerHTML = '';
-
-  // Prev month padding
-  for (let i = 0; i < startOffset; i++) {
-    const d = new Date(year, month, -startOffset + i + 1);
-    const cell = createDayCell(d, true);
-    grid.appendChild(cell);
-  }
-
-  // Current month
-  for (let d = 1; d <= lastDay.getDate(); d++) {
-    const date = new Date(year, month, d);
-    const cell = createDayCell(date, false);
-    grid.appendChild(cell);
-  }
-
-  // Next month padding
-  const totalCells = startOffset + lastDay.getDate();
-  const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
-  for (let i = 1; i <= remaining; i++) {
-    const d = new Date(year, month + 1, i);
-    const cell = createDayCell(d, true);
-    grid.appendChild(cell);
-  }
-
-  renderSelectedInfo();
-}
-
-function createDayCell(date, otherMonth) {
-  const cell = document.createElement('div');
-  cell.className = 'day-cell';
-
-  if (otherMonth) cell.classList.add('other-month');
-
-  const today = new Date();
-  const isToday = date.toDateString() === today.toDateString();
-  const isSelected = date.toDateString() === selectedDate.toDateString();
-  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-
-  if (isToday) cell.classList.add('today');
-  if (isSelected) cell.classList.add('selected');
-  if (isWeekend && !otherMonth) cell.classList.add('weekend');
-
-  const numEl = document.createElement('div');
-  numEl.className = 'day-num';
-  numEl.textContent = date.getDate();
-  cell.appendChild(numEl);
-
-  // Event dots
-  const key = getDateKey(date);
-  if (events[key] && events[key].length > 0) {
-    const dotsEl = document.createElement('div');
-    dotsEl.className = 'events-dots';
-    const count = Math.min(events[key].length, 3);
-    for (let i = 0; i < count; i++) {
-      const dot = document.createElement('div');
-      dot.className = 'dot';
-      dotsEl.appendChild(dot);
-    }
-    cell.appendChild(dotsEl);
-  }
-
-  cell.addEventListener('click', () => {
-    selectedDate = new Date(date);
-    renderCalendar();
-  });
-
-  return cell;
-}
-
-function renderSelectedInfo() {
-  document.getElementById('selectedDateText').textContent = formatSelectedDate(selectedDate);
+function renderCal(){
+  const y=calDate.getFullYear(),m=calDate.getMonth();
+  document.getElementById('calMonth').textContent=MONTHS[m];
+  document.getElementById('calYear').textContent=y;
+  document.getElementById('selDateLabel').textContent=fmtSel(selDate);
+  const first=new Date(y,m,1),last=new Date(y,m+1,0);
+  let off=first.getDay()-1;if(off<0)off=6;
+  const grid=document.getElementById('daysGrid');grid.innerHTML='';
+  for(let i=0;i<off;i++)grid.appendChild(mkCell(new Date(y,m,-off+i+1),true));
+  for(let d=1;d<=last.getDate();d++)grid.appendChild(mkCell(new Date(y,m,d),false));
+  const total=off+last.getDate(),rem=total%7===0?0:7-total%7;
+  for(let i=1;i<=rem;i++)grid.appendChild(mkCell(new Date(y,m+1,i),true));
   renderEvents();
 }
 
-function renderEvents() {
-  const key = getDateKey(selectedDate);
-  const dayEvents = events[key] || [];
-  const list = document.getElementById('eventsList');
-  list.innerHTML = '';
-
-  if (dayEvents.length === 0) {
-    list.innerHTML = '<div class="no-events">Нет событий на этот день</div>';
-    return;
+function mkCell(date,other){
+  const c=document.createElement('div');c.className='dc'+(other?' other':'');
+  if(date.getDay()===0||date.getDay()===6)c.classList.add('we');
+  if(date.toDateString()===new Date().toDateString())c.classList.add('today');
+  if(date.toDateString()===selDate.toDateString())c.classList.add('sel');
+  const num=document.createElement('div');num.className='dn';num.textContent=date.getDate();c.appendChild(num);
+  const key=dKey(date);
+  if(calEvents[key]?.length){
+    const dots=document.createElement('div');dots.className='edots';
+    for(let i=0;i<Math.min(calEvents[key].length,3);i++){const d=document.createElement('div');d.className='edot';dots.appendChild(d);}
+    c.appendChild(dots);
   }
+  c.addEventListener('click',()=>{selDate=new Date(date);haptic();renderCal();});
+  return c;
+}
 
-  dayEvents.forEach((ev, idx) => {
-    const item = document.createElement('div');
-    item.className = 'event-item';
-    item.innerHTML = `
-      <div class="event-color ${ev.color}"></div>
-      <div class="event-content">
-        <div class="event-title">${ev.title}</div>
-        <div class="event-time">${ev.time || 'Весь день'}</div>
-      </div>
-      <button class="event-delete" data-idx="${idx}">×</button>
-    `;
+function renderEvents(){
+  const key=dKey(selDate),evs=calEvents[key]||[],list=document.getElementById('eventsList');
+  list.innerHTML='';
+  if(!evs.length){list.innerHTML='<div class="empty-state">Нет событий 🌙<br>Нажми + чтобы добавить</div>';return;}
+  evs.forEach((ev,i)=>{
+    const card=document.createElement('div');card.className='event-card';
+    card.innerHTML=`<div class="ev-stripe ${ev.color}"></div><div class="ev-body"><div class="ev-title">${ev.title}</div><div class="ev-meta"><span>${ev.time||'Весь день'}</span>${ev.notify?'<span class="ev-notify">🔔 напомню</span>':''}</div></div><button class="ev-del" data-i="${i}">×</button>`;
+    list.appendChild(card);
+  });
+  list.querySelectorAll('.ev-del').forEach(btn=>btn.addEventListener('click',()=>{
+    calEvents[dKey(selDate)].splice(+btn.dataset.i,1);
+    if(!calEvents[dKey(selDate)].length)delete calEvents[dKey(selDate)];
+    save();haptic('medium');renderCal();
+  }));
+}
+
+document.getElementById('prevM').addEventListener('click',()=>{calDate.setMonth(calDate.getMonth()-1);renderCal();haptic();});
+document.getElementById('nextM').addEventListener('click',()=>{calDate.setMonth(calDate.getMonth()+1);renderCal();haptic();});
+
+let evColor='pink',evNotify=false;
+document.getElementById('openAddEvent').addEventListener('click',()=>{document.getElementById('eventModal').classList.add('open');document.getElementById('evTitle').focus();haptic();});
+document.getElementById('cancelEvent').addEventListener('click',closeEvModal);
+document.getElementById('eventModal').addEventListener('click',e=>{if(e.target===document.getElementById('eventModal'))closeEvModal();});
+function closeEvModal(){document.getElementById('eventModal').classList.remove('open');document.getElementById('evTitle').value='';document.getElementById('evTime').value='';evNotify=false;document.getElementById('notifyToggle').classList.remove('on');}
+document.querySelectorAll('.col-opt').forEach(opt=>opt.addEventListener('click',()=>{document.querySelectorAll('.col-opt').forEach(o=>o.classList.remove('selected'));opt.classList.add('selected');evColor=opt.dataset.c;haptic();}));
+document.getElementById('notifyToggle').addEventListener('click',()=>{evNotify=!evNotify;document.getElementById('notifyToggle').classList.toggle('on',evNotify);haptic();});
+document.getElementById('saveEvent').addEventListener('click',()=>{
+  const title=document.getElementById('evTitle').value.trim();
+  if(!title){document.getElementById('evTitle').style.borderColor='#ff6b6b';setTimeout(()=>document.getElementById('evTitle').style.borderColor='',700);return;}
+  const key=dKey(selDate);
+  if(!calEvents[key])calEvents[key]=[];
+  const time=document.getElementById('evTime').value;
+  calEvents[key].push({title,time,color:evColor,notify:evNotify});
+  calEvents[key].sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+  save();notifyH('success');closeEvModal();renderCal();
+  if(evNotify&&tg){
+    const ds=`${selDate.getDate()}.${selDate.getMonth()+1}.${selDate.getFullYear()}`;
+    tg.sendData(JSON.stringify({type:'reminder',title,date:ds,time}));
+  }
+});
+
+// ── TASKS ──
+let taskFilter='all',taskCat='personal';
+function renderTasks(){
+  const list=document.getElementById('tasksList');list.innerHTML='';
+  let filtered=tasks.filter(t=>{
+    if(taskFilter==='active')return !t.done;
+    if(taskFilter==='done')return t.done;
+    if(['work','personal','health'].includes(taskFilter))return t.cat===taskFilter;
+    return true;
+  });
+  const total=tasks.length,done=tasks.filter(t=>t.done).length,pct=total?Math.round(done/total*100):0;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressPct').textContent=pct+'%';
+  if(!filtered.length){list.innerHTML='<div class="empty-state">Нет задач 🎉</div>';return;}
+  filtered.forEach(task=>{
+    const ri=tasks.indexOf(task);
+    const item=document.createElement('div');item.className='task-item'+(task.done?' done':'');
+    item.innerHTML=`<div class="task-check" data-i="${ri}">${task.done?'✓':''}</div><div class="task-text">${task.text}</div><span class="task-cat cat-${task.cat}">${task.cat==='work'?'Работа':task.cat==='health'?'Здоровье':'Личное'}</span><button class="task-del" data-i="${ri}">×</button>`;
     list.appendChild(item);
   });
+  list.querySelectorAll('.task-check').forEach(btn=>btn.addEventListener('click',()=>{tasks[+btn.dataset.i].done=!tasks[+btn.dataset.i].done;save();haptic();renderTasks();}));
+  list.querySelectorAll('.task-del').forEach(btn=>btn.addEventListener('click',()=>{tasks.splice(+btn.dataset.i,1);save();haptic('medium');renderTasks();}));
+}
+document.querySelectorAll('.filter-chip').forEach(chip=>chip.addEventListener('click',()=>{document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));chip.classList.add('active');taskFilter=chip.dataset.f;haptic();renderTasks();}));
+document.getElementById('taskInput').addEventListener('keydown',e=>{if(e.key==='Enter'){const t=e.target.value.trim();if(!t)return;document.getElementById('taskModalInput').value=t;e.target.value='';document.getElementById('taskModal').classList.add('open');haptic();}});
+document.getElementById('addTaskBtn').addEventListener('click',()=>{document.getElementById('taskModalInput').value=document.getElementById('taskInput').value.trim();document.getElementById('taskInput').value='';document.getElementById('taskModal').classList.add('open');haptic();});
+document.querySelectorAll('.cat-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.cat-btn').forEach(b=>b.className='cat-btn');btn.className=`cat-btn active-${btn.dataset.cat}`;taskCat=btn.dataset.cat;haptic();}));
+document.getElementById('cancelTask').addEventListener('click',()=>document.getElementById('taskModal').classList.remove('open'));
+document.getElementById('taskModal').addEventListener('click',e=>{if(e.target===document.getElementById('taskModal'))document.getElementById('taskModal').classList.remove('open');});
+document.getElementById('saveTask').addEventListener('click',()=>{
+  const text=document.getElementById('taskModalInput').value.trim();
+  if(!text)return;
+  tasks.push({text,done:false,cat:taskCat,id:Date.now()});
+  save();notifyH('success');
+  document.getElementById('taskModal').classList.remove('open');
+  document.getElementById('taskModalInput').value='';
+  renderTasks();
+});
 
-  list.querySelectorAll('.event-delete').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const i = parseInt(e.target.dataset.idx);
-      events[key].splice(i, 1);
-      if (events[key].length === 0) delete events[key];
-      saveEvents();
-      renderCalendar();
-    });
+// ── NOTES ──
+let noteTagFilter='all',editingNoteIdx=-1,nvColor='yellow',nvTags=[];
+
+function getAllTags(){const all=new Set();notes.forEach(n=>(n.tags||[]).forEach(t=>all.add(t)));return[...all];}
+
+function renderTagBar(){
+  const bar=document.getElementById('notesTagBar');bar.innerHTML='';
+  const mk=(tag,label)=>{
+    const btn=document.createElement('button');
+    btn.className='ntag-filter'+(noteTagFilter===tag?' active':'');
+    btn.textContent=label;
+    btn.addEventListener('click',()=>{noteTagFilter=tag;haptic();renderNotes();});
+    bar.appendChild(btn);
+  };
+  mk('all','Все');
+  getAllTags().forEach(tag=>mk(tag,'#'+tag));
+}
+
+function renderNotes(){
+  renderTagBar();
+  const list=document.getElementById('notesList');list.innerHTML='';
+  const filtered=notes.filter(n=>noteTagFilter==='all'||(n.tags||[]).includes(noteTagFilter));
+  if(!filtered.length){list.innerHTML='<div class="empty-state">Нет заметок 📝<br>Нажми + чтобы создать</div>';return;}
+  [...filtered].reverse().forEach(note=>{
+    const ri=notes.indexOf(note);
+    const row=document.createElement('div');row.className=`note-row col-${note.color||'yellow'}`;
+    const tagsHtml=(note.tags||[]).map(t=>`<span class="note-tag">#${t}</span>`).join('');
+    const d=new Date(note.ts||Date.now());
+    const ds=`${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3).toLowerCase()}`;
+    row.innerHTML=`<div class="note-row-header"><div class="note-row-title">${note.title||'Без названия'}</div><button class="note-row-del" data-i="${ri}">×</button></div><div class="note-row-preview">${note.body||'Пустая заметка...'}</div><div class="note-row-footer">${tagsHtml}<span class="note-date-label">${ds}</span></div>`;
+    row.addEventListener('click',e=>{if(!e.target.classList.contains('note-row-del'))openNoteViewer(ri);});
+    row.querySelector('.note-row-del').addEventListener('click',e=>{e.stopPropagation();notes.splice(+e.target.dataset.i,1);save();haptic('medium');renderNotes();});
+    list.appendChild(row);
   });
 }
 
-// Modal
-const modal = document.getElementById('modalOverlay');
-
-document.getElementById('addEventBtn').addEventListener('click', () => {
-  modal.classList.add('open');
-  document.getElementById('eventTitle').focus();
-});
-
-document.getElementById('cancelBtn').addEventListener('click', closeModal);
-modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
-
-function closeModal() {
-  modal.classList.remove('open');
-  document.getElementById('eventTitle').value = '';
-  document.getElementById('eventTime').value = '';
+function openNoteViewer(idx){
+  editingNoteIdx=idx;
+  const note=idx===-1?{title:'',body:'',tags:[],color:'yellow'}:notes[idx];
+  document.getElementById('nvTitle').value=note.title||'';
+  document.getElementById('nvBody').value=note.body||'';
+  nvColor=note.color||'yellow';
+  nvTags=[...(note.tags||[])];
+  document.querySelectorAll('.nc-dot').forEach(d=>d.classList.toggle('selected',d.dataset.nc===nvColor));
+  renderNvTags();
+  document.getElementById('noteViewer').classList.add('open');
+  setTimeout(()=>document.getElementById('nvBody').focus(),300);
+  haptic();
 }
 
-// Color picker
-document.querySelectorAll('.color-opt').forEach(opt => {
-  opt.addEventListener('click', () => {
-    document.querySelectorAll('.color-opt').forEach(o => o.classList.remove('selected'));
-    opt.classList.add('selected');
-    selectedColor = opt.dataset.color;
+function renderNvTags(){
+  const row=document.getElementById('nvTagsRow');
+  row.querySelectorAll('.nv-tag').forEach(t=>t.remove());
+  const input=document.getElementById('nvTagInput');
+  nvTags.forEach((tag,i)=>{
+    const span=document.createElement('div');span.className='nv-tag';
+    span.innerHTML=`#${tag}<button class="nv-tag-del" data-i="${i}">×</button>`;
+    span.querySelector('.nv-tag-del').addEventListener('click',()=>{nvTags.splice(i,1);renderNvTags();});
+    row.insertBefore(span,input);
   });
-});
+}
 
-document.getElementById('saveBtn').addEventListener('click', () => {
-  const title = document.getElementById('eventTitle').value.trim();
-  if (!title) {
-    document.getElementById('eventTitle').style.borderColor = '#f76a8a';
-    setTimeout(() => document.getElementById('eventTitle').style.borderColor = '', 800);
-    return;
+document.getElementById('nvTagInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'||e.key===','||e.key===' '){
+    e.preventDefault();
+    const val=e.target.value.trim().replace(/[,# ]/g,'');
+    if(val&&!nvTags.includes(val)){nvTags.push(val);renderNvTags();}
+    e.target.value='';
   }
-  const time = document.getElementById('eventTime').value;
-  const key = getDateKey(selectedDate);
-  if (!events[key]) events[key] = [];
-  events[key].push({ title, time, color: selectedColor });
-  events[key].sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
-  saveEvents();
-  closeModal();
-  renderCalendar();
-
-  if (tg) tg.HapticFeedback?.notificationOccurred('success');
 });
 
-// Navigation
-document.getElementById('prevBtn').addEventListener('click', () => {
-  currentDate.setMonth(currentDate.getMonth() - 1);
-  renderCalendar();
-});
-document.getElementById('nextBtn').addEventListener('click', () => {
-  currentDate.setMonth(currentDate.getMonth() + 1);
-  renderCalendar();
-});
+document.querySelectorAll('.nc-dot').forEach(dot=>dot.addEventListener('click',()=>{
+  document.querySelectorAll('.nc-dot').forEach(d=>d.classList.remove('selected'));
+  dot.classList.add('selected');nvColor=dot.dataset.nc;haptic();
+}));
 
-renderCalendar();
+document.getElementById('nvBack').addEventListener('click',()=>{document.getElementById('noteViewer').classList.remove('open');renderNotes();});
+document.getElementById('nvSave').addEventListener('click',saveNote);
+
+function saveNote(){
+  const title=document.getElementById('nvTitle').value.trim();
+  const body=document.getElementById('nvBody').value.trim();
+  const tagVal=document.getElementById('nvTagInput').value.trim().replace(/[,# ]/g,'');
+  if(tagVal&&!nvTags.includes(tagVal))nvTags.push(tagVal);
+  document.getElementById('nvTagInput').value='';
+  if(editingNoteIdx===-1){
+    notes.push({title,body,tags:[...nvTags],color:nvColor,ts:Date.now()});
+  }else{
+    notes[editingNoteIdx]={...notes[editingNoteIdx],title,body,tags:[...nvTags],color:nvColor};
+  }
+  save();notifyH('success');
+  document.getElementById('noteViewer').classList.remove('open');
+  renderNotes();
+}
+
+document.getElementById('openAddNote').addEventListener('click',()=>openNoteViewer(-1));
+
+renderCal();renderTasks();renderNotes();
 </script>
 </body>
 </html>
