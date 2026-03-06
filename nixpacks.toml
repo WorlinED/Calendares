@@ -1,8 +1,5 @@
 [phases.setup]
-nixPkgs = ["python311"]
-
-[phases.install]
-cmds = ["python3.11 -m venv .venv", ".venv/bin/pip install -r requirements.txt"]
+nixPkgs = ["python311", "python311Packages.pip"]
 
 [start]
-cmd = ".venv/bin/python bot.py"
+cmd = "pip install -r requirements.txt && python bot.py"
