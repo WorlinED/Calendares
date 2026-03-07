@@ -6,7 +6,8 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Con
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-TOKEN = "TOKEN"
+import os
+TOKEN = os.environ.get("TOKEN")
 WEBAPP_URL = "https://worlined.github.io/Calendares/Calendar.html"
 
 # ── /start ──
